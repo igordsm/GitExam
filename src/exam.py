@@ -104,6 +104,7 @@ class Exam(GObject.GObject):
                 'name': self.name,
                 'exam_dir': self.exam_dir,
                 'provider_auth': self.provider.auth,
+                'provider_account': self.provider.root_account,
                 'repositories': {key: value.__dict__ for key, value in self.repositories.items()}
             }, f)
     
@@ -114,6 +115,7 @@ class Exam(GObject.GObject):
             base_path, _ = osp.split(exam_dir)
             prov = GitHubProvider()
             prov.auth = tuple(d['provider_auth'])
+            prov.root_account = d['provider_account']
             instance = Exam(d['name'], base_path, prov)
             instance.repositories = {key: GitRepository(**value) for key, value in d['repositories'].items()}
 

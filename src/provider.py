@@ -78,16 +78,17 @@ class GitProvider:
 class GitHubProvider(GitProvider):
     def __init__(self):
         self.auth = ('', '')
+        self.root_account = ''
         self.widgets = {}
     
-    def create_repository(self, user_info: GitRepository, prefix, account):
+    def create_repository(self, user_info: GitRepository, prefix):
         repo_name = f'{prefix}-{user_info.student_login}'
-        user_info.repository_url = f'git@github.com:/{account}/{repo_name}'
+        user_info.repository_url = f'git@github.com:/{self.root_account}/{repo_name}'
 
-        if account == self.auth[0]:
+        if self.root_account == self.auth[0]:
             url_part = 'user'
         else:
-            url_part = 'orgs/' + account
+            url_part = 'orgs/' + self.root_account
 
         print(f'https://api.github.com/{url_part}/repos')
         response = requests.post(f'https://api.github.com/{url_part}/repos', headers={'Accept': 'application/vnd.github.v3+json'}, json={'name': repo_name, 'private': True, 'auto_init': True}, auth=self.auth)
@@ -124,11 +125,19 @@ class GitHubProvider(GitProvider):
         self.widgets['token'] = Gtk.Entry()
         grid.attach(self.widgets['token'], 1, 1, 1, 1)
 
+        grid.attach(Gtk.Label("Organization"), 0, 2, 1, 1)
+        self.widgets['organization'] = Gtk.Entry()
+        grid.attach(self.widgets['organization'], 1, 2, 1, 1)
+
         grid.show_all()
         parent.add(grid)
     
     def configuration_done(self):
         self.auth = (self.widgets['username'].get_text(), self.widgets['token'].get_text())
+        if self.widgets['organization'].get_text() != '':
+            self.root_account = self.widgets['organization'].get_text()
+        else:
+            self.root_account = self.auth[0]
     
 
         
