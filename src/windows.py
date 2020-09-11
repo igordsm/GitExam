@@ -176,7 +176,7 @@ class ExamScreen:
             with open(dialog.get_filename(), 'r') as f:
                 new_students = csv.reader(f.readlines())
                 for st in new_students:
-                    self.exam.add_students(st[0], st[1], st[2])
+                    self.exam.add_student(st[0], st[1], st[2])
             
             self.update_student_list_storage()
 
