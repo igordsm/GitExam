@@ -82,23 +82,23 @@ class GitHubProvider(GitProvider):
     
     def create_repository(self, user_info: GitRepository, prefix, account):
         repo_name = f'{prefix}-{user_info.student_login}'
-        print(account)
-        if account == self.auth[0]:
-            account = 'user'
-        else:
-            account = 'orgs/' + account
-
         user_info.repository_url = f'git@github.com:/{account}/{repo_name}'
-        print(repo_name)
-        print(self.auth)
-        print(f'https://api.github.com/{account}/repos')
-        response = requests.post(f'https://api.github.com/{account}/repos', headers={'Accept': 'application/vnd.github.v3+json'}, json={'name': repo_name, 'private': True, 'auto_init': True}, auth=self.auth)
+
+        if account == self.auth[0]:
+            url_part = 'user'
+        else:
+            url_part = 'orgs/' + account
+
+        print(f'https://api.github.com/{url_part}/repos')
+        response = requests.post(f'https://api.github.com/{url_part}/repos', headers={'Accept': 'application/vnd.github.v3+json'}, json={'name': repo_name, 'private': True, 'auto_init': True}, auth=self.auth)
         print(response.status_code, response.json())
         assert response.status_code == 201 or response.status_code == 422
 
     def send_invitation(self, repo: GitRepository):
         account = repo.repository_url.split('/')[-2]
+        account = account.split(':')[-1]
         repo_name = repo.repository_url.split('/')[-1]
+        print(f'https://api.github.com/repos/{account}/{repo_name}/collaborators/{repo.platform_user}')
         response = requests.put(f'https://api.github.com/repos/{account}/{repo_name}/collaborators/{repo.platform_user}', headers={'Accept': 'application/vnd.github.v3+json'}, json={'permission': 'push'}, auth=self.auth)
         print(self.auth, response.status_code)
         assert response.status_code == 201 or response.status_code == 204
@@ -106,9 +106,10 @@ class GitHubProvider(GitProvider):
 
     def check_student_accepted_invitation(self, repo: GitRepository):
         account = repo.repository_url.split('/')[-2]
+        account = account.split(':')[-1]
         repo_name = repo.repository_url.split('/')[-1]
         response = requests.get(f'https://api.github.com/repos/{account}/{repo_name}/collaborators/{repo.platform_user}', headers={'Accept': 'application/vnd.github.v3+json'}, auth=self.auth)
-        print(response.status_code)
+        print('accepted?', response.status_code, response.content)
         repo.accepted_invitation = response.status_code == 204
         return repo.accepted_invitation
 
