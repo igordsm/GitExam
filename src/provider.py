@@ -110,6 +110,7 @@ class GitHubProvider(GitProvider):
         account = account.split(':')[-1]
         repo_name = repo.repository_url.split('/')[-1]
         response = requests.get(f'https://api.github.com/repos/{account}/{repo_name}/collaborators/{repo.platform_user}', headers={'Accept': 'application/vnd.github.v3+json'}, auth=self.auth)
+        print(repo.platform_user, repo.student_login, repo.repository_url)
         print('accepted?', response.status_code, response.content)
         repo.accepted_invitation = response.status_code == 204
         return repo.accepted_invitation

@@ -70,7 +70,7 @@ class Exam(GObject.GObject):
             if repo.repository_url != '': 
                 continue
         
-            r = self.provider.create_repository(repo, self.name.lower().replace(' ', '-'), 'insper-classroom')
+            r = self.provider.create_repository(repo, self.name.lower().replace(' ', '-'))
             print(r, repo.repository_url)
         
     def update_repositories(self):
