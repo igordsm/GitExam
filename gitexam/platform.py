@@ -73,12 +73,10 @@ class GitHub(Platform):
         return repo_url
         
 
-    def send_invitation(self, repo):
-        return
-        account = repo.repository_url.split('/')[-2]
-        account = account.split(':')[-1]
-        repo_name = repo.repository_url.split('/')[-1]
-        print(f'https://api.github.com/repos/{account}/{repo_name}/collaborators/{repo.platform_user}')
+    def send_invitation(self, exam: Exam, info: StudentInfo):
+        repo_name = f'{exam.name}-{info.login}'
+
+        url = f'https://api.github.com/repos/{self.root_account}/{repo_name}/collaborators/{repo.platform_user}'
         response = requests.put(f'https://api.github.com/repos/{account}/{repo_name}/collaborators/{repo.platform_user}', headers={'Accept': 'application/vnd.github.v3+json'}, json={'permission': 'push'}, auth=self.auth)
         print(self.auth, response.status_code)
         assert response.status_code == 201 or response.status_code == 204

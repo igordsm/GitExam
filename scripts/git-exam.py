@@ -41,7 +41,11 @@ def invite(folder, users):
     with open(users) as f:
         reader = csv.reader(f.readlines())
         for student in reader:
-            exam.add_student(student[0], student[1])
+            extra = []
+            if len(student) > 2:
+                extra = student[2:]
+            
+            exam.add_student(student[0], student[1], extra)
 
 
 @git_exam.command()
