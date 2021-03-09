@@ -2,7 +2,7 @@ from __future__ import annotations
 import requests
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from .exam import StudentInfo, Exam
+    from .exam import StudentInfo, Exam, Repository
 
 class Platform:
     '''
@@ -59,8 +59,6 @@ class GitHub(Platform):
         else:
             url_part = 'orgs/' + self.root_account
 
-        print(self.auth, self.root_account)
-
         post_url = f'https://api.github.com/{url_part}/repos'
         response = requests.post(post_url, 
                                  headers={'Accept': 'application/vnd.github.v3+json'}, 
@@ -75,12 +73,12 @@ class GitHub(Platform):
 
     def send_invitation(self, exam: Exam, info: StudentInfo):
         repo_name = f'{exam.name}-{info.login}'
+        platform_user = info.extra_info[0]
+        account = info.repo_url.split('/')[-2]
 
-        url = f'https://api.github.com/repos/{self.root_account}/{repo_name}/collaborators/{repo.platform_user}'
-        response = requests.put(f'https://api.github.com/repos/{account}/{repo_name}/collaborators/{repo.platform_user}', headers={'Accept': 'application/vnd.github.v3+json'}, json={'permission': 'push'}, auth=self.auth)
-        print(self.auth, response.status_code)
+        response = requests.put(f'https://api.github.com/repos/{account}/{repo_name}/collaborators/{platform_user}', headers={'Accept': 'application/vnd.github.v3+json'}, json={'permission': 'push'}, auth=self.auth)
         assert response.status_code == 201 or response.status_code == 204
-        repo.invitation_sent = True
+        info.invited = True
 
     def check_student_accepted_invitation(self, repo):
         account = repo.repository_url.split('/')[-2]
@@ -104,6 +102,5 @@ class GitHub(Platform):
         if root_org.strip() == '':
             root_org = username
         return GitHub(username, pwa, root_org)
-
 
 platforms = [GitHub]

@@ -1,6 +1,5 @@
 from . import platform
 import sh
-import pygit2
 import yaml
 
 from typing import Dict, Tuple, List
@@ -36,6 +35,9 @@ class Repository:
         self.git.fetch(remote_name)
         self.git.merge(f'{remote_name}/master')
 
+    def push(self):
+        self.git.push()
+
     @staticmethod
     def clone(name:str, url:str, folder:str):
         r = Repository(name, folder)
@@ -51,6 +53,7 @@ class StudentInfo:
     name: str
     extra_info: List[str]
     repo_url: str = ''
+    invited: bool = False
     accepted_invite: bool = False
 
 
@@ -77,6 +80,7 @@ class Exam:
 
     def _create_or_load_root_repository(self):
         repo_path = osp.join(self.base_path, 'exam_files')
+
         if osp.exists(repo_path):
             repo = Repository('exam_files', repo_path)
         else:
@@ -85,15 +89,20 @@ class Exam:
         return repo
     
     def add_student(self, login, name, extra_info):
+        repo_path = osp.join(self.base_path, login)
+
+        if osp.isdir(repo_path):
+            return self.students[name]
+
         st = StudentInfo(login, name, extra_info)
         st.repo_url = self.provider.create_remote_repository(self, st)
-
+        
         self.students[st.name] = st
-        repo_path = osp.join(self.base_path, st.login)
-        repo = self.students[st.name] = Repository.clone(st.name, st.repo_url, repo_path)
+        repo = self.repositories[st.name] = Repository.clone(st.name, st.repo_url, repo_path)
         repo.add_remote('source', '../exam_files')
         repo.pull_and_merge('source')
-        #self.provider.send_invitation(self, st)
+        self.provider.send_invitation(self, st)
+        st.invited = True
 
     @staticmethod
     def load(folder):
@@ -103,15 +112,19 @@ class Exam:
         
         platform = config_dict['provider'](**config_dict['provider_info'])
         exam = Exam(config_dict['name'], folder, platform)
-
+        exam.students = config_dict['students']
+        exam.repositories = {r[0]: Repository(r[1], r[2]) for r in config_dict['repositories']}
         return exam 
 
     def save(self):
         config_dict = {
             'name': self.name,
             'provider': self.provider.__class__,
-            'provider_info': self.provider.persist()
+            'provider_info': self.provider.persist(),
+            'students': self.students,
+            'repositories': [(r[0], r[1].name, r[1].repo_path) for r in self.repositories.items()],
         }
+
         yaml_config = yaml.dump(config_dict)
         config_file = osp.join(self.base_path, 'config.yml')
         with open(config_file, 'w') as f:

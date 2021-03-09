@@ -8,5 +8,7 @@ setup(name='GitExam',
       author='Igor Montagner',
       author_email='igordsm@gmail.com',
       packages=['gitexam'],
-      scripts=['scripts/git-exam.py']
+      scripts=['scripts/git-exam.py'],
+      python_requires='>=3.8',
+      install_requires=['pyyaml', 'sh', 'click', 'requests']
      )

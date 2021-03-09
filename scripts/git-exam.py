@@ -11,8 +11,6 @@ def git_exam():
 @git_exam.command()
 @click.argument('folder')
 def create(folder):
-    # TODO: pasta já existe
-
     name = input('Exam name: ')
     for i, plat in enumerate(platforms):
         print(f'{i}) {plat.__name__}')
@@ -28,7 +26,7 @@ def list(folder):
     exam = Exam.load(folder)
     print('Exam name:', exam.name)
     print('Platform:', exam.provider.__class__.__name__)
-    for st in exam.students:
+    for st in exam.students.values():
         print(st.name)
 
 
@@ -45,18 +43,27 @@ def invite(folder, users):
             if len(student) > 2:
                 extra = student[2:]
             
-            exam.add_student(student[0], student[1], extra)
+            print('adding', student[0])
+            exam.add_student(student[0].strip(), student[1].strip(), extra)
+            exam.save()
 
 
 @git_exam.command()
 @click.argument('folder')
 def pull(folder):
-    print(folder)
+    exam = Exam.load(folder)
+    for name, r in exam.repositories.items():
+        print('pulling:', name)
+        r.pull_and_merge('origin')
 
 @git_exam.command()
 @click.argument('folder')
 def push(folder):
-    print(folder)
+    exam = Exam.load(folder)
+    for name, r in exam.repositories.items():
+        print('pushing:', name)
+        r.pull_and_merge('source')
+        r.push()
 
 @git_exam.command()
 @click.argument('folder')
