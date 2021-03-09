@@ -85,12 +85,32 @@ class Exam(GObject.GObject):
                 self.provider.check_student_accepted_invitation(repo)
     
     def push_new_files(self):
+        pwd = os.getcwd()
+        os.chdir(self.exam_files_dir)
+        try:
+            os.remove('patch')
+        except FileNotFoundError:
+            pass
+        os.system('git add -A')
+        os.system('git commit -am "Update"')
+        os.system('git format-patch -1 --stdout > patch')
+        os.chdir(pwd)
         for repo in self.repositories.values():
             if not osp.exists(repo.full_path):
                 continue
             
-            copy_tree(self.exam_files_dir, repo.full_path, update=True)
-            repo.add_all_files_in_folder()           
+            # cria commit em exam_files e cria patch
+
+            # aplica patch em cada um
+            #copy_tree(self.exam_files_dir, repo.full_path, update=True)
+            os.chdir(repo.full_path)
+            os.system('git am --abort')
+            os.system('git am ../exam_files/patch')
+            os.system('git push')
+            #repo.add_all_files_in_folder()
+        os.chdir(self.exam_files_dir)
+        os.chdir(pwd)
+        
     
     def send_invitations(self):
         for repo in self.repositories.values():
@@ -112,10 +132,14 @@ class Exam(GObject.GObject):
     def load(exam_dir):
         with open(osp.join(exam_dir, 'exam.json')) as f:
             d = json.load(f)
+            print(d)
             base_path, _ = osp.split(exam_dir)
             prov = GitHubProvider()
             prov.auth = tuple(d['provider_auth'])
-            prov.root_account = d['provider_account']
+            if 'provider_account' in  d:
+                prov.root_account = d['provider_account']
+            else:
+                prov.root_account = prov.auth[0]
             instance = Exam(d['name'], base_path, prov)
             instance.repositories = {key: GitRepository(**value) for key, value in d['repositories'].items()}
 
